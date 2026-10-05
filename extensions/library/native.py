@@ -11,7 +11,8 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .enrich import extractive
-from .model import LIB_FIELDS, LibraryError, canonical_url, normalized_text, safe_error, sha256_bytes
+from .model import LIB_FIELDS, LibraryError, canonical_url, normalized_text, now, safe_error, sha256_bytes
+from .sources import platform_for, stable_id
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -142,14 +143,50 @@ class NativeIngestor:
         self.permission_ids, self.analyzer, self.legacy_field_ids = permission_ids, analyzer or extractive, legacy_field_ids or {}
 
     def find_existing(self, source_id, canonical, content_hash, original_url=None):
+        def public_identity(url):
+            if not isinstance(url, str) or not url:
+                return None
+            try:
+                clean = canonical_url(url)
+                return stable_id(platform_for(clean), clean)
+            except (LibraryError, ValueError):
+                return None
+
+        caller_url_id = public_identity(canonical)
+        original_id = public_identity(original_url)
+        caller_ids = {value for value in (source_id, caller_url_id, original_id) if value}
+        if len(caller_ids) > 1:
+            return None
+        caller_id = next(iter(caller_ids), None)
         for doc in self.reader.pages("/api/documents/?page_size=100"):
             fields = custom_fields(doc)
-            if ((source_id and fields.get(self.field_ids["lib_source_id"]) == source_id) or
-                (canonical and fields.get(self.field_ids["lib_canonical_url"]) == canonical) or
-                (content_hash and fields.get(self.field_ids["lib_content_hash"]) == content_hash) or
-                (source_id and fields.get(self.legacy_field_ids.get("wx_source_id")) == source_id) or
-                (original_url and fields.get(self.legacy_field_ids.get("wx_source_url")) == original_url) or
-                (canonical and fields.get(self.legacy_field_ids.get("wx_source_url")) == canonical)):
+            known_id = fields.get(self.field_ids["lib_source_id"]) or fields.get(self.legacy_field_ids.get("wx_source_id"))
+            known_url = fields.get(self.field_ids["lib_canonical_url"])
+            legacy_url = fields.get(self.legacy_field_ids.get("wx_source_url"))
+            document_ids = {value for value in (known_id, public_identity(known_url), public_identity(legacy_url)) if value}
+            if len(document_ids) > 1 or (caller_id and document_ids and caller_id not in document_ids):
+                continue
+            document_id = next(iter(document_ids), None)
+            if (caller_id and document_id == caller_id) or (
+                legacy_url and original_url and legacy_url == original_url and
+                (not caller_id or not document_id or caller_id == document_id)
+            ) or (
+                content_hash and not caller_id and not (original_url or canonical) and
+                not document_id and not (known_url or legacy_url) and
+                fields.get(self.field_ids["lib_content_hash"]) == content_hash
+            ):
+                return int(doc["id"])
+        return None
+
+    def source_changed(self, document_id: int, content_hash: str) -> bool:
+        fields = custom_fields(self.reader.document(document_id))
+        previous = fields.get(self.field_ids["lib_content_hash"])
+        return isinstance(previous, str) and bool(previous) and previous != content_hash
+
+    def find_version(self, version_id: str, content_hash: str) -> int | None:
+        for doc in self.reader.pages("/api/documents/?page_size=100"):
+            fields = custom_fields(doc)
+            if fields.get(self.field_ids["lib_source_id"]) == version_id and fields.get(self.field_ids["lib_content_hash"]) == content_hash:
                 return int(doc["id"])
         return None
 
@@ -161,8 +198,11 @@ class NativeIngestor:
                   "lib_original_url": data.get("original_url"), "lib_canonical_url": canonical,
                   "lib_author": data.get("author"), "lib_publish_date": data.get("published_at"),
                   "lib_fetched_at": data.get("fetched_at"), "lib_content_hash": content_hash,
-                  "lib_completeness": "complete", "lib_extraction_status": "complete",
-                  "lib_provenance": json.dumps({"adapter": data["platform"], "ocr": data.get("ocr_provenance", [])}, ensure_ascii=False),
+                  "lib_completeness": data.get("completeness", "complete"), "lib_extraction_status": data.get("extraction_status", data.get("completeness", "complete")),
+                  "lib_provenance": json.dumps({"source": data.get("provenance", {"adapter": data["platform"]}),
+                                                "source_label": data.get("source_label"), "ocr": data.get("ocr_provenance", []),
+                                                "ocr_indexed": bool(data.get("ocr_indexed", False)),
+                                                "ai": {"method": analysis.get("method"), "version": analysis_version}}, ensure_ascii=False),
                   "lib_analysis": json.dumps(analysis, ensure_ascii=False),
                   "lib_analysis_version": analysis_version, "lib_reading_state": "unread", "lib_starred": False,
                   "lib_pending": False}
@@ -172,8 +212,10 @@ class NativeIngestor:
             if filename: header += f"; filename=\"{filename}\""
             header += "\r\n" + (f"Content-Type: {mime}\r\n" if mime else "") + "\r\n"
             parts.append(header.encode() + (value if isinstance(value, bytes) else str(value).encode()) + b"\r\n")
-        file_bytes = data.get("file_bytes")
-        add("document", file_bytes if file_bytes is not None else body.encode(), data.get("filename", "library.txt"), data.get("mime", "text/plain; charset=utf-8")); add("title", data["title"])
+        file_bytes = None if data.get("upload_text_with_ocr") else data.get("file_bytes")
+        filename = "library.txt" if data.get("upload_text_with_ocr") else data.get("filename", "library.txt")
+        mime = "text/plain; charset=utf-8" if data.get("upload_text_with_ocr") else data.get("mime", "text/plain; charset=utf-8")
+        add("document", file_bytes if file_bytes is not None else body.encode(), filename, mime); add("title", data["title"])
         if "document_type" in self.resources: add("document_type", self.resources["document_type"])
         if "tag" in self.resources: add("tags", self.resources["tag"])
         add("custom_fields", json.dumps({str(self.field_ids[k]): v for k, v in values.items() if v is not None}, ensure_ascii=False))
@@ -193,20 +235,96 @@ class NativeIngestor:
         return None
 
     def attach_ocr(self, document_id: int, source: str, ocr: str, provenance: list[dict]) -> None:
-        """Append a distinct OCR section without replacing extracted source."""
-        document = self.reader.document(document_id); existing = str(document.get("content") or source or "")
-        base = existing.split("── OCR ──", 1)[0].rstrip()
-        if not base.startswith("── SOURCE ──"): base = archive_text(base)
-        content = base + "\n── OCR ──\n" + ocr.strip() + "\n── END OCR ──"
-        values = custom_fields(document); raw = values.get(self.field_ids["lib_provenance"])
-        try: provenance_value = json.loads(raw) if isinstance(raw, str) else {}
-        except ValueError: provenance_value = {}
-        provenance_value["ocr"] = [{key: row[key] for key in ("image_url", "method") if key in row} for row in provenance]
-        values[self.field_ids["lib_provenance"]] = json.dumps(provenance_value, ensure_ascii=False)
-        self.writer.request("PATCH", f"/api/documents/{int(document_id)}/", {"content": content, "custom_fields": [{"field": key, "value": value} for key, value in values.items()]})
-        updated = self.reader.document(document_id); updated_fields = custom_fields(updated)
-        if str(updated.get("content") or "") != content or updated_fields.get(self.field_ids["lib_provenance"]) != values[self.field_ids["lib_provenance"]]:
-            raise LibraryError("native OCR content readback mismatch", "native_failed", 502)
+        """Append OCR to the reader's indexed content, leaving the original file alone."""
+        text = ocr.strip()
+        if not text or not isinstance(provenance, list):
+            raise LibraryError("invalid OCR attachment", "ocr_unindexed", 409)
+        before = self.reader.document(document_id)
+        existing = before.get("content")
+        if not isinstance(existing, str):
+            raise LibraryError("native source content is unavailable", "ocr_unindexed", 409)
+        start, end = "── OCR ──\n", "\n── END OCR ──"
+        if "── OCR ──" in existing or "── END OCR ──" in existing:
+            if existing.count(start) != 1 or existing.count(end) != 1 or existing.split(start, 1)[1].split(end, 1)[0] != text:
+                raise LibraryError("native OCR section conflicts with attachment", "ocr_unindexed", 409)
+            content = existing
+        else:
+            content = existing + ("\n" if existing and not existing.endswith("\n") else "") + start + text + end
+        fields = custom_fields(before)
+        raw = fields.get(self.field_ids["lib_provenance"])
+        try: record = json.loads(raw) if isinstance(raw, str) else {}
+        except ValueError: raise LibraryError("native OCR provenance is invalid", "ocr_unindexed", 409) from None
+        if not isinstance(record, dict): raise LibraryError("native OCR provenance is invalid", "ocr_unindexed", 409)
+        ocr_origin = [{key: row[key] for key in ("image_url", "method") if key in row} for row in provenance if isinstance(row, dict)]
+        if len(ocr_origin) != len(provenance): raise LibraryError("invalid OCR provenance", "ocr_unindexed", 409)
+        record["ocr"] = ocr_origin
+        fields[self.field_ids["lib_provenance"]] = json.dumps(record, ensure_ascii=False)
+        if content != existing or custom_fields(before) != fields:
+            self.writer.request("PATCH", f"/api/documents/{int(document_id)}/",
+                                {"content": content, "custom_fields": [{"field": key, "value": value} for key, value in fields.items()]})
+        after = self.reader.document(document_id)
+        if after.get("content") != content or custom_fields(after) != fields:
+            raise LibraryError("native OCR attachment readback mismatch", "ocr_unindexed", 502)
+
+    def verify_indexed_ocr(self, document_id: int, ocr: str) -> bool:
+        content = str(self.reader.document(document_id).get("content") or "")
+        if content.count("── OCR ──\n") != 1 or content.count("\n── END OCR ──") != 1: return False
+        section = content.split("── OCR ──\n", 1)[1].split("\n── END OCR ──", 1)[0]
+        return bool(ocr.strip()) and section == ocr.strip()
+
+    def mark_ocr_indexed(self, document_id: int, completeness: str) -> None:
+        """Record success only after verify_indexed_ocr read the native document."""
+        before = self.reader.document(document_id)
+        fields = custom_fields(before)
+        raw = fields.get(self.field_ids["lib_provenance"])
+        try: record = json.loads(raw) if isinstance(raw, str) else {}
+        except ValueError: raise LibraryError("native OCR provenance is invalid", "native_failed", 409) from None
+        if not isinstance(record, dict): raise LibraryError("native OCR provenance is invalid", "native_failed", 409)
+        if completeness not in {"complete", "partial"}: raise LibraryError("invalid OCR completeness")
+        if (record.get("ocr_indexed") is True and fields.get(self.field_ids["lib_completeness"]) == completeness and
+                fields.get(self.field_ids["lib_extraction_status"]) == completeness): return
+        record["ocr_indexed"] = True
+        fields[self.field_ids["lib_provenance"]] = json.dumps(record, ensure_ascii=False)
+        fields[self.field_ids["lib_completeness"]] = completeness
+        fields[self.field_ids["lib_extraction_status"]] = completeness
+        self.writer.request("PATCH", f"/api/documents/{int(document_id)}/",
+                            {"custom_fields": [{"field": key, "value": value} for key, value in fields.items()]})
+        after = self.reader.document(document_id)
+        if custom_fields(after) != fields or after.get("content") != before.get("content"):
+            raise LibraryError("native OCR provenance readback mismatch", "native_failed", 502)
+
+    def backfill_metadata(self, document_id: int, item: dict, changes: dict[str, str], provenance: str) -> bool:
+        """Patch only trusted metadata fields and read back the entire custom-field set."""
+        allowed = {"lib_canonical_url", "lib_author", "lib_publish_date", "lib_fetched_at"}
+        if not changes or set(changes) - allowed or provenance != "operator-public":
+            raise LibraryError("invalid metadata backfill")
+        before = self.reader.document(document_id)
+        fields = custom_fields(before)
+        source_id = fields.get(self.field_ids["lib_source_id"])
+        content_hash = fields.get(self.field_ids["lib_content_hash"])
+        if source_id != item.get("source_id") or content_hash != item.get("content_hash"):
+            raise LibraryError("native source identity readback mismatch", "native_failed", 409)
+        changed = {name: value for name, value in changes.items() if fields.get(self.field_ids[name]) != value}
+        if not changed: return False
+        raw = fields.get(self.field_ids["lib_provenance"])
+        try: record = json.loads(raw) if isinstance(raw, str) else {}
+        except ValueError: raise LibraryError("native provenance is invalid", "native_failed", 409) from None
+        if not isinstance(record, dict) or not isinstance(record.get("metadata_revisions", []), list):
+            raise LibraryError("native provenance is invalid", "native_failed", 409)
+        revisions = record.setdefault("metadata_revisions", [])
+        if len(revisions) >= 100: raise LibraryError("metadata revision limit reached", "native_failed", 409)
+        revisions.append({"revision": len(revisions) + 1, "at": now(), "provenance": provenance,
+                          "fields": sorted(changed)})
+        expected = dict(fields)
+        for name, value in changed.items(): expected[self.field_ids[name]] = value
+        expected[self.field_ids["lib_provenance"]] = json.dumps(record, ensure_ascii=False)
+        self.writer.request("PATCH", f"/api/documents/{int(document_id)}/",
+                            {"custom_fields": [{"field": key, "value": value} for key, value in expected.items()]})
+        after = self.reader.document(document_id)
+        if (custom_fields(after) != expected or after.get("content") != before.get("content") or
+                after.get("title") != before.get("title")):
+            raise LibraryError("native metadata readback mismatch", "native_failed", 502)
+        return True
 
     def reanalyze(self, document_id: int, version: str) -> str:
         document = self.reader.document(document_id); fields = custom_fields(document)
@@ -245,4 +363,5 @@ class NativeIngestor:
         return (fields.get(self.field_ids["lib_source_id"]) == item.get("source_id") and
                 fields.get(self.field_ids["lib_content_hash"]) == item.get("content_hash") and
                 fields.get(self.field_ids["lib_canonical_url"]) == item.get("canonical_url") and
-                (item.get("kind") == "file" or "── SOURCE ──" in str(doc.get("content") or "")))
+                (item.get("kind") == "file" or bool(item.get("metadata", {}).get("supplement_file_path")) or
+                 "── SOURCE ──" in str(doc.get("content") or "")))

@@ -4,13 +4,24 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from typing import Annotated
 from urllib.error import HTTPError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, build_opener
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
-from .model import LibraryError
+from .model import LibraryError, MAX_INGRESS_TEXT_CHARS, MAX_JSON_BYTES
+
+
+TEXT_INPUT_DESCRIPTION = (
+    f"At most {MAX_INGRESS_TEXT_CHARS} Unicode code points (Python len). The complete JSON object "
+    f"must be at most {MAX_JSON_BYTES} UTF-8 bytes after "
+    'json.dumps(value, ensure_ascii=True, separators=(",", ":")). '
+    f"The raw HTTP body must independently be at most {MAX_JSON_BYTES} bytes, even when text length is valid. "
+    "MCP serialization adds spaces and, for submit_batch, optional null fields to the raw body."
+)
 
 
 class LocalAPI:
@@ -40,13 +51,19 @@ def create_server(api: LocalAPI | None = None) -> FastMCP:
     client = api or api_from_runtime()
     server = FastMCP("paperless-library", instructions="Use only authenticated local Paperless Library API.")
     @server.tool()
-    def submit_batch(text: str | None = None, urls: list[str] | None = None, files: list[dict] | None = None, title: str | None = None, idempotency_key: str | None = None) -> dict:
-        return client.call("POST", "/v1/batches", {"text": text, "urls": urls or [], "files": files or [], "title": title, "idempotency_key": idempotency_key})
+    def submit_batch(text: Annotated[str, Field(max_length=MAX_INGRESS_TEXT_CHARS, description=TEXT_INPUT_DESCRIPTION)] | None = None, urls: list[str] | None = None, files: list[dict] | None = None, title: str | None = None, idempotency_key: str | None = None, source_label: str | None = None) -> dict:
+        payload = {"text": text, "urls": urls or [], "files": files or [], "title": title, "idempotency_key": idempotency_key}
+        if source_label is not None: payload["source_label"] = source_label
+        return client.call("POST", "/v1/batches", payload)
     @server.tool()
     def batch_status(batch_id: str) -> dict: return client.call("GET", "/v1/batches/" + quote(batch_id, safe=""))
     @server.tool()
-    def resume_item(item_id: str, text: str | None = None, title: str | None = None, file_path: str | None = None, ocr: list[dict] | None = None) -> dict:
-        payload = {key: value for key, value in {"text": text, "title": title, "file_path": file_path, "ocr": ocr}.items() if value is not None}
+    def resume_item(item_id: str, text: Annotated[str, Field(max_length=MAX_INGRESS_TEXT_CHARS, description=TEXT_INPUT_DESCRIPTION)] | None = None, title: str | None = None, file_path: str | None = None, ocr: list[dict] | None = None,
+                    canonical_url: str | None = None, publish_date: str | None = None, author: str | None = None,
+                    fetched_at: str | None = None, provenance: str | None = None) -> dict:
+        payload = {key: value for key, value in {"text": text, "title": title, "file_path": file_path, "ocr": ocr,
+                    "canonical_url": canonical_url, "publish_date": publish_date, "author": author,
+                    "fetched_at": fetched_at, "provenance": provenance}.items() if value is not None}
         return client.call("POST", "/v1/items/" + quote(item_id, safe="") + "/resume", payload)
     @server.tool()
     def cancel_batch(batch_id: str) -> dict: return client.call("POST", "/v1/batches/" + quote(batch_id, safe="") + "/cancel", {})

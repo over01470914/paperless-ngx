@@ -12,7 +12,8 @@ from .enrich import ApprovedProvider
 from .search import LibrarySearch
 from .service import LibraryService, serve
 from .worker import LibraryWorker
-from .sources import SafeFetcher, URLGuard, pinned_transport
+from .sources import IMAGE_CDN, SafeFetcher, URLGuard, pinned_transport
+from .local_ocr import LocalOCR
 
 
 def load_config(path: str | None = None) -> dict:
@@ -38,7 +39,9 @@ def build(config: dict):
         provider = ApprovedProvider(config.get("enrichment_endpoint"), config.get("enrichment_model"), config.get("enrichment_key_file"), config.get("enrichment_version", "approved-1"))
     native = NativeIngestor(reader, writer, field_ids, resources,
                             {key: int(config[key]) for key in ("reader_user_id", "writer_user_id", "boss_user_id")}, provider, legacy_field_ids)
-    worker = LibraryWorker(ledger, native, fetcher=SafeFetcher(URLGuard(), pinned_transport), accepted_roots=config["allowed_file_roots"], rate_limit_seconds=config["rate_limit_seconds"])
+    worker = LibraryWorker(ledger, native, fetcher=SafeFetcher(URLGuard(), pinned_transport),
+                           ocr=LocalOCR(SafeFetcher(URLGuard(allowed_hosts=IMAGE_CDN, secure_only=True), pinned_transport)),
+                           accepted_roots=config["allowed_file_roots"], rate_limit_seconds=config["rate_limit_seconds"])
     migrator = LegacyMigrator(ledger, config["legacy_library"])
     return LibraryService(ledger, worker, LibrarySearch(reader, field_ids, legacy_field_ids), writer, field_ids, config["allowed_file_roots"], migrator)
 

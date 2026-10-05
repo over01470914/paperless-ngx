@@ -1,4 +1,17 @@
 {
+  "library_source_v03_owner_release": {
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-05",
+    "timezone": "Asia/Taipei",
+    "card": "paperless-radar/t_ca71887e",
+    "qa_card": "paperless-radar/t_32b4cb3a",
+    "owner_card": "paperless-radar/t_d7c39023",
+    "version": "Library 0.2.0 -> 0.3.0; prose contract revision 1 -> 2; owner acceptance revision 2 -> 3; native 3.2.1 unchanged",
+    "paths": ["extensions/LIBRARY_CONTRACT.md", "extensions/library/ACCEPTANCE.md", "extensions/library/README.md", "extensions/library/__init__.py", "extensions/library/app.py", "extensions/library/contracts/openapi.json", "extensions/library/mcp_server.py", "extensions/library/model.py", "extensions/library/native.py", "extensions/library/service.py", "extensions/library/skill/SKILL.md", "extensions/library/sources.py", "extensions/library/tests/test_library.py", "extensions/library/worker.py", "extensions/library/changes/source-v0.3.0.json", "extensions/library/local_ocr.py", "extensions/library/tests/test_adapters.py", "extensions/library/vision_ocr.swift", "extensions/library/xhs_edge.py", "extensions/CHANGELOG.md", "extensions/change-catalog.json"],
+    "contract": "extensions/LIBRARY_CONTRACT.md revision 2 and extensions/library/contracts/openapi.json 0.3.0; future stage4 spec remains unshipped",
+    "verification": ["independent source QA81/81 synthetic tests and6/6 boundary cases PASS; compilation/Swift typecheck/MCP schemas/OpenAPI semantics PASS", "actual deployed0.3.0 health200/unauthorized401/input400/surplus-route404", "current registered MCP Vision OCR supplement confirmed; independent reader exact indexed OCR", "native original PDF download SHA unchanged after content PATCH", "registered metadata-only WeChat backfill with exact native author/date/body readback", "query registered-MCP21/21 PASS on frozen corrected source", "git diff --check and exact staged-path catalog check"],
+    "limits": ["fresh Edge accessibility surface0x0; real XHS source acceptance UNVERIFIED", "requirements-derived scan is not XHS source", "autonomous shortlink extraction UNVERIFIED", "existing authenticated tailnet bridge is a strict loopback-isolation exception", "UI/full metadata migration/full restore/daily schedule/offsite/remote/reboot not accepted", "no paid model or remote OCR enabled; all private source/receipts/screenshots excluded"]
+  },
   "query_revision2_owner_release": {
     "project": "over01470914/paperless-ngx",
     "date": "2026-10-05",

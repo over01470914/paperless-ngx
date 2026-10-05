@@ -1,0 +1,141 @@
+{
+  "card": "t_ca71887e",
+  "baseline": "ec0397bb1d7534ac8348c7fea640a8fddec3101c",
+  "version": "0.3.0",
+  "recorded_at": "2026-10-05T19:12:31+08:00",
+  "timezone": "Asia/Shanghai",
+  "changed_paths": [
+    "extensions/library/sources.py",
+    "extensions/library/worker.py",
+    "extensions/library/native.py",
+    "extensions/library/model.py",
+    "extensions/library/app.py",
+    "extensions/library/service.py",
+    "extensions/library/mcp_server.py",
+    "extensions/library/__init__.py",
+    "extensions/library/xhs_edge.py",
+    "extensions/library/local_ocr.py",
+    "extensions/library/vision_ocr.swift",
+    "extensions/library/README.md",
+    "extensions/library/skill/SKILL.md",
+    "extensions/library/contracts/openapi.json",
+    "extensions/library/tests/test_adapters.py",
+    "extensions/library/tests/test_library.py",
+    "extensions/library/changes/source-v0.3.0.json"
+  ],
+  "contract": {
+    "identity": "WeChat public canonical article tuple or verified operator supplement; XHS stable note ID after DNS-pinned shortlink resolution",
+    "browser": "Fixed note-scoped visible DOM JavaScript in a dedicated bounded Microsoft Edge tab; no auth state access",
+    "ocr": "Exact HTTPS CDN allowlist and MIME/byte validation; installed Tesseract or install-free Swift Vision fallback; text OCR is included in the original text upload; binary OCR is appended to actual native content only after original binary upload, with no duplicate section on retry; exact independent reader content and custom-field readback are required before indexed and confirmed status",
+    "native": "Original binary upload bytes are preserved by source code; OCR attachment PATCH changes only document content and custom fields, retains native extracted source content and all unrelated custom fields, and fails closed on conflict or mismatch; source/OCR/AI provenance separated; identity-aware dedupe rejects equal-body cross-source merges and keeps changed source in a separate revision document",
+    "api": "0.3.0 OpenAPI bearer contract, strict route/input validation, source_label and confirmed-item metadata-only backfill with exact reader readback"
+  },
+  "focused_checks": [
+    {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest extensions.library.tests.test_adapters -q", "exit_code": 0, "result": "16 tests passed"},
+    {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest discover -s extensions/library/tests -q", "exit_code": 0, "result": "74 tests passed; existing OCR assertions and authorized one-line health version fixture pass"},
+    {"command": "Python compile() in memory for 11 changed Python files", "exit_code": 0, "result": "11 files compiled without writing operator-owned cache; requested compileall under .operator/source-v03 was not run in this turn"},
+    {"command": "prior turn: PYTHONPYCACHEPREFIX=/private/tmp/paperless-source-pycache /Users/garbagod/.local/share/paperless-library/venv/bin/python -m compileall -q on 11 changed Python files", "exit_code": 0, "result": "passed before bookkeeping-only JSON change"},
+    {"command": "prior turn: /usr/bin/swiftc -typecheck -module-cache-path /private/tmp/paperless-library-swift-cache extensions/library/vision_ocr.swift", "exit_code": 0, "result": "Swift Vision source typechecked before bookkeeping-only JSON change; requested operator-owned cache path was not written in this turn"},
+    {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest extensions.library.tests.test_adapters.AdapterTests.test_route_validation_and_openapi_semantics -q", "exit_code": 0, "result": "OpenAPI JSON parse and semantic schema assertions passed"},
+    {"command": "git diff --check", "exit_code": 0, "result": "passed"}
+  ],
+  "operator_evidence": "Owner reported native 3.2.1 DocumentSerializer content is writable and writer4 no-op content PATCH on doc24 returned HTTP 200; independent reader observed unchanged content/custom fields and unchanged original-download bytes/SHA. This does not prove changed-content PATCH or original retention after mutation. Operator also reported synthetic local Swift Vision OCR probe output OCR_PROBE ('HELLO','vision'). Private probe and receipt were not inspected or modified by source writer",
+  "limits": [
+    "No live Edge, source page, native API, or external network verification was performed by this source writer",
+    "Operator synthetic local Swift Vision OCR succeeded; live OCR on actual source images and changed-content native indexing remain unverified. Readback failures remain needs_ocr or partial, never indexed success",
+    "Private .operator/source-v03 probe and receipt remain operator-owned and were not modified",
+    "Official image CDN coverage is a conservative exact allowlist and may leave other image hosts pending OCR",
+    "Changed-content native PATCH, exact independent reader content/custom-field readback, original binary download after mutation, and revision document behavior require owner live acceptance",
+    "Requested compileall and Swift typecheck cache paths under .operator/source-v03 were not written by this source writer because that directory is operator-owned; prior-turn compileall and Swift typecheck passed using private temporary caches"
+  ],
+  "rev4_addendum": {
+    "card": "t_06734f39",
+    "qa_blocker": "t_32b4cb3a run21 NO-GO: a 150000 ASCII-character JSON text payload (150012 raw bytes) was within the declared OpenAPI text<=200000 limit and direct service.submit accepted it while the HTTP handler rejected the raw body at the 128 KiB cap with 400.",
+    "recorded_at": "2026-10-05T19:58:45+08:00",
+    "timezone": "Asia/Shanghai",
+    "version": "0.3.0",
+    "changed_paths": [
+      "extensions/library/model.py",
+      "extensions/library/service.py",
+      "extensions/library/contracts/openapi.json",
+      "extensions/library/tests/test_library.py",
+      "extensions/library/README.md",
+      "extensions/library/changes/source-v0.3.0.json"
+    ],
+    "contract": {
+      "text_characters": "SubmitBatch/ResumeItem text is limited to 100000 Unicode code points (len(text)); OpenAPI maxLength is 100000.",
+      "canonical_envelope": "The complete JSON object is limited to 131072 UTF-8 bytes after json.dumps(value, ensure_ascii=True, separators=(\",\", \":\")), so JSON escape expansion and multibyte text count toward the cap. No truncation.",
+      "raw_http_body": "The HTTP handler independently rejects a raw Content-Length/body over 131072 bytes before parsing.",
+      "enforcement_point": "LibraryService.submit and LibraryService.resume call model.require_object(payload, canonical=True) before any ledger read, spool, transition, or native call, so direct and HTTP callers are rejected identically with no side effects.",
+      "shared_constants": "model.MAX_JSON_BYTES=131072 and model.MAX_INGRESS_TEXT_CHARS=100000 are the single source of truth for the API and the OpenAPI schema.",
+      "mcp": "FastMCP submit_batch/resume_item call the local HTTP API with no separate limit, so they pass through this same HTTP validation; their default serializer includes spaces and, for submit_batch, optional null fields, so the raw MCP wire body can be larger than the compact canonical object.",
+      "non_goals_unchanged": "Cap retained; content never truncated; OCR success assertions preserved."
+    },
+    "focused_checks": [
+      {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest discover -s extensions/library/tests -q", "exit_code": 0, "result": "Ran 80 tests in 10.580s, OK (74 prior tests plus 6 new rev4 size tests); existing OCR assertions and the authorized one-line health version fixture still pass"},
+      {"command": "PYTHONDONTWRITEBYTECODE=1 .../venv/bin/python -m unittest extensions.library.tests.test_library -q", "exit_code": 0, "result": "Ran 35 tests in 0.617s, OK"},
+      {"command": "PYTHONPYCACHEPREFIX=<private scratch>/paperless-rev4-pycache .../venv/bin/python -m compileall -q extensions/library/model.py extensions/library/service.py extensions/library/tests/test_library.py", "exit_code": 0, "result": "compiled, no operator-owned cache written"},
+      {"command": ".../venv/bin/python -m json.tool extensions/library/contracts/openapi.json > /dev/null", "exit_code": 0, "result": "OpenAPI JSON parses; SubmitBatch/ResumeItem text maxLength 100000 and x-max-json-utf8-bytes 131072"},
+      {"command": "git diff --check", "exit_code": 0, "result": "passed"}
+    ],
+    "qa_reproduction": [
+      {"case": "exact QA payload, direct service.submit 150000 ASCII chars", "observed": "400 invalid_request 'JSON request exceeds limit'; canonical object 150011 bytes > 131072; ledger items 0; spool files 0"},
+      {"case": "exact QA payload, real loopback HTTP POST /v1/batches", "observed": "400 invalid_request 'JSON request exceeds limit'; raw body 150012 bytes > 131072; ledger items 0; spool files 0"},
+      {"case": "character boundary, direct submit 99999 / 100000 / 100001 ASCII chars", "observed": "accepted / accepted / 400 'text must be at most 100000 characters'"},
+      {"case": "canonical envelope boundary, submit and resume, direct and HTTP", "observed": "compact 131071 and 131072 bytes accepted; 131073 bytes rejected 400 with no ledger/spool/item change"},
+      {"case": "escaped JSON and traditional Chinese multibyte", "observed": "65536 double-quotes (65536 chars, >131072 canonical) rejected although raw UTF-8 under the cap; 繁體中文 x5500 (raw under cap) rejected; accepted multibyte and ASCII-escaped variants below the cap pass on both paths"},
+      {"case": "raw HTTP cap vs canonical cap independence", "observed": "raw body 131073 bytes with valid compact JSON rejected by the Content-Length/body cap; compact body with Content-Length 131073 rejected"}
+    ],
+    "verification": [
+      "All rev4 changes were authored through the single Codex App Server source thread 01a10be1-c88e-7571-b242-ac538fe1cb09 on the shared worktree; no git reset, rebase, commit, or push.",
+      "No live network, native API, deployment, migration, or secret/config access was performed."
+    ],
+    "limits": [
+      "The MCP tool inputSchema for submit_batch/resume_item text does not declare a maxLength: that schema is generated in extensions/library/mcp_server.py, which is outside this card's allowed paths, so it was not modified. MCP calls still obey the HTTP caps and fail closed, but the advertised MCP schema does not express the character limit; Naya must authorize a bounded mcp_server.py schema change or record this limitation.",
+      "OpenAPI cannot express a whole-object byte cap natively; it is declared with the x-max-json-utf8-bytes vendor extension plus prose, and enforced in code.",
+      "This is source-only evidence. No live end-to-end acceptance is claimed."
+    ],
+    "content_hashes_sha256": {
+      "extensions/library/model.py": "a8a5ad87f959901ceb358f09176e8e6efcb05d38dbaebb28ec62eab0208a5a1b",
+      "extensions/library/service.py": "a99e7c170762645e101c42d018831914c0e2ffb64a21014889cc424667a1bd5c",
+      "extensions/library/contracts/openapi.json": "a138d68264004dff269724a9ac4524401ef6a29f26f68bf526d080ae3ac2019c",
+      "extensions/library/tests/test_library.py": "abb7dc0c536165477d5df1769f9e124ce50448763e859b45d40c4d98db1864e3",
+      "extensions/library/README.md": "bb9dd02290e53b84268d10374fc7d8f356ba9bd219c48e778e76e364114af60e"
+    }
+  },
+  "rev5_addendum": {
+    "card": "t_26f99f56",
+    "baseline_head": "49f6cef49",
+    "recorded_at": "2026-10-05T20:26:22+08:00",
+    "changed_paths": [
+      "extensions/library/mcp_server.py",
+      "extensions/library/tests/test_library.py",
+      "extensions/library/README.md",
+      "extensions/library/changes/source-v0.3.0.json"
+    ],
+    "contract": "Both FastMCP text input schemas now advertise a nullable string branch with maxLength=100000 from model.MAX_INGRESS_TEXT_CHARS. The string description states the complete canonical JSON object cap of model.MAX_JSON_BYTES=131072 UTF-8 bytes, the independent raw HTTP cap, and MCP serializer spaces and optional null fields. Runtime HTTP/service validation from rev4 remains unchanged; no truncation.",
+    "checks": [
+      {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest extensions.library.tests.test_library -q", "exit_code": 1, "result": "Ran 37 tests; 1 error in pre-existing test_real_loopback_submit_resume_size_status_and_no_effects: socket bind on 127.0.0.1 denied by sandbox with PermissionError [Errno 1]. No assertion failure in the new MCP schema test."},
+      {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest extensions.library.tests.test_library.LibraryTests.test_mcp_text_schema_limit_and_pre_http_validation extensions.library.tests.test_library.LibraryTests.test_size_schema_and_mcp_http_wire_boundary extensions.library.tests.test_library.LibraryTests.test_submit_and_resume_text_character_limits_direct_and_http extensions.library.tests.test_library.LibraryTests.test_submit_and_resume_canonical_envelope_limits_direct_and_http extensions.library.tests.test_library.LibraryTests.test_escaped_and_chinese_text_count_toward_canonical_bytes extensions.library.tests.test_library.LibraryTests.test_raw_http_cap_and_canonical_http_cap_are_independent -q", "exit_code": 0, "result": "6 offline focused tests passed; actual FastMCP list_tools schema and pre-call rejection, synthetic HTTP pass-through, direct/handler size boundaries."},
+      {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -c 'from pathlib import Path; files=[\"extensions/library/mcp_server.py\", \"extensions/library/tests/test_library.py\"]; [compile(Path(path).read_text(encoding=\"utf-8\"), path, \"exec\") for path in files]; print(f\"compiled={len(files)}\")'", "exit_code": 0, "result": "2 changed Python files compiled in memory."},
+      {"command": "/Users/garbagod/.local/share/paperless-library/venv/bin/python -m json.tool extensions/library/changes/source-v0.3.0.json >/dev/null", "exit_code": 0, "result": "Manifest parsed before rev5 addendum; final parse rerun after append."},
+      {"command": "/Users/garbagod/.local/share/paperless-library/venv/bin/python -m json.tool extensions/library/contracts/openapi.json >/dev/null", "exit_code": 0, "result": "Unchanged OpenAPI JSON parsed."},
+      {"command": "git diff --check -- extensions/library/mcp_server.py extensions/library/tests/test_library.py extensions/library/README.md", "exit_code": 0, "result": "Passed before rev5 manifest append; final diff check rerun after append."}
+    ],
+    "worker_verification": [
+      {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest extensions.library.tests.test_library -q", "exit_code": 0, "result": "Ran 37 tests in 1.140s, OK; local worker shell allowed the synthetic loopback bind blocked inside AppServer sandbox."},
+      {"command": "PYTHONDONTWRITEBYTECODE=1 /Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest discover -s extensions/library/tests -q", "exit_code": 0, "result": "Ran 81 tests in 10.652s, OK; synthetic local loopback only, no live source or native API."},
+      {"command": "compile() in memory for extensions/library/mcp_server.py and extensions/library/tests/test_library.py; python -m json.tool for extensions/library/changes/source-v0.3.0.json and extensions/library/contracts/openapi.json; git diff --check", "exit_code": 0, "result": "Two Python files compiled, both JSON documents parsed, and full-worktree diff whitespace check passed."}
+    ],
+    "content_hashes_sha256": {
+      "extensions/library/mcp_server.py": "9615aa5fb1f769e171ac582be3744ab0445da8575ad499ed1d527669def5ca6b",
+      "extensions/library/tests/test_library.py": "9e3dd83acd7821e491fbd61f231fc2b1d73fc7b829cf34ea42daaec3b564252c",
+      "extensions/library/README.md": "00e664c55a4e9cdbb903af8843bbfffba2988706cb367c77cffb5c00ee3feb48"
+    },
+    "limits": [
+      "The prior rev4 MCP schema limitation is historical and superseded by this addendum; the rev4 addendum and evidence remain intact.",
+      "The initial AppServer sandbox rejected a synthetic 127.0.0.1 loopback bind; the local worker subsequently ran the focused module and full synthetic discover suite successfully outside that sandbox. No external network or live API was used.",
+      "RecordingAPI validates MCP schema and forwarding only; it is not a live HTTP, QA, or end-to-end result."
+    ]
+  }
+}

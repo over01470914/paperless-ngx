@@ -6,15 +6,18 @@ import json
 import tempfile
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from http.server import ThreadingHTTPServer
 import unittest
 from unittest.mock import patch
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+from mcp.server.fastmcp.exceptions import ToolError
+
 from extensions.library.ledger import Ledger
 from extensions.library.mcp_server import LocalAPI, create_server
-from extensions.library.model import LIB_FIELDS, LibraryError
+from extensions.library.model import LIB_FIELDS, LibraryError, MAX_INGRESS_TEXT_CHARS, MAX_JSON_BYTES
 from extensions.library.model import normalized_text, sha256_bytes
 from extensions.library.native import NativeClient, NativeIngestor
 from extensions.library.search import LibrarySearch, variants
@@ -102,6 +105,40 @@ class LibraryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); root = Path(self.temp.name)
         self.ledger = Ledger(root / "state" / "jobs.sqlite", root / "state" / "spool")
     def tearDown(self): self.temp.cleanup()
+
+    def size_service(self):
+        ids = fields()
+        return LibraryService(self.ledger, LibraryWorker(self.ledger, FakeNative()),
+                              LibrarySearch(FakeReader({"id": 1, "content": "", "custom_fields": []}), ids),
+                              FakeWriter(), ids)
+
+    def size_dispatch(self, service, path, payload=None, body=None, content_length=None):
+        raw = body if body is not None else json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode()
+        handler = object.__new__(handler_factory(service, "service-test-token"))
+        handler.command, handler.path, handler.rfile = "POST", path, io.BytesIO(raw)
+        handler.headers = {"Content-Length": str(len(raw) if content_length is None else content_length),
+                           "Authorization": "Bearer service-test-token"}
+        return handler._dispatch()
+
+    def assert_size_rejected_without_effects(self, invoke, item_id=None, message=None):
+        counts = tuple(self.ledger.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                       for table in ("batches", "items"))
+        spools = {path.name: path.read_bytes() for path in self.ledger.spool_dir.iterdir()}
+        item = (dict(self.ledger.db.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone())
+                if item_id else None)
+        with (patch.object(self.ledger, "get_item", side_effect=AssertionError("ledger read before size validation")),
+              patch.object(self.ledger, "spool", side_effect=AssertionError("spool before size validation")),
+              patch.object(self.ledger, "create_batch", side_effect=AssertionError("batch before size validation")),
+              patch.object(self.ledger, "resume", side_effect=AssertionError("resume before size validation")),
+              patch.object(self.ledger, "transition", side_effect=AssertionError("transition before size validation"))):
+            with self.assertRaises(LibraryError) as raised: invoke()
+        if message is not None:
+            self.assertEqual(str(raised.exception), message)
+        self.assertEqual(counts, tuple(self.ledger.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                                       for table in ("batches", "items")))
+        self.assertEqual(spools, {path.name: path.read_bytes() for path in self.ledger.spool_dir.iterdir()})
+        if item_id:
+            self.assertEqual(item, dict(self.ledger.db.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone()))
 
     def test_atomic_idempotent_and_exact_10_50_counts(self):
         self.assertEqual(LIB_FIELDS["lib_starred"], "boolean"); self.assertEqual(LIB_FIELDS["lib_pending"], "boolean")
@@ -391,13 +428,171 @@ class LibraryTests(unittest.TestCase):
         self.assertIn("hits", dispatch("GET", "/v1/documents/1/evidence?query=Hermes", "service-test-token"))
         self.assertEqual(dispatch("PATCH", "/v1/documents/1/state", "service-test-token", json.dumps({"read": True}).encode())["read"], True)
         self.assertEqual(dispatch("POST", f"/v1/batches/{batch_id}/cancel", "service-test-token")["status"], "cancelled")
-        self.assertEqual(dispatch("GET", "/health")["version"], "0.2.0")
+        self.assertEqual(dispatch("GET", "/health")["version"], "0.3.0")
         openapi = json.loads((Path(__file__).parents[1] / "contracts/openapi.json").read_text())
         self.assertTrue({"/v1/batches", "/v1/search", "/v1/documents/{id}/state", "/v1/migrate"}.issubset(openapi["paths"]))
         api = LocalAPI("service-test-token")
         # Registration is actual SDK registration; the client is not invoked here.
         names = {tool.name for tool in asyncio.run(create_server(api).list_tools())}
         self.assertEqual(names, {"submit_batch", "batch_status", "resume_item", "cancel_batch", "search_library", "read_evidence", "set_reading_state", "migrate_legacy"})
+
+    def test_submit_and_resume_text_character_limits_direct_and_http(self):
+        service = self.size_service()
+        item_id = self.ledger.create_batch([{"kind": "text", "spool_path": self.ledger.spool("original")}])["items"][0]["id"]
+        for endpoint in ("submit", "resume"):
+            path = "/v1/batches" if endpoint == "submit" else f"/v1/items/{item_id}/resume"
+            for transport in ("direct", "http"):
+                for length in (99_999, 100_000):
+                    payload = {"text": "a" * length}
+                    result = (getattr(service, endpoint)(payload) if endpoint == "submit" else service.resume(item_id, payload)) if transport == "direct" else self.size_dispatch(service, path, payload)
+                    self.assertEqual(result["total"] if endpoint == "submit" else result["status"], 1 if endpoint == "submit" else "queued")
+                payload = {"text": "a" * 100_001}
+                invoke = (lambda: getattr(service, endpoint)(payload) if endpoint == "submit" else service.resume(item_id, payload)) if transport == "direct" else (lambda: self.size_dispatch(service, path, payload))
+                self.assert_size_rejected_without_effects(invoke, item_id,
+                    "text must be at most 100000 characters" if endpoint == "submit" else "invalid resume text")
+
+    def test_submit_and_resume_canonical_envelope_limits_direct_and_http(self):
+        service = self.size_service()
+        item_id = self.ledger.create_batch([{"kind": "text", "spool_path": self.ledger.spool("original")}])["items"][0]["id"]
+        size = lambda value: len(json.dumps(value, ensure_ascii=True, separators=(",", ":")).encode("utf-8"))
+        submit_base = {"text": "a" * 100_000, "files": [{"path": "/synthetic/"}]}
+        submit_equal = {"text": submit_base["text"], "files": [{"path": "/synthetic/" + "k" * (131_072 - size(submit_base))}]}
+        resume_base = {"text": "a" * 100_000, "ocr": [{"text": "x" * 20_000}, {"text": ""}]}
+        resume_equal = {"text": resume_base["text"], "ocr": [resume_base["ocr"][0], {"text": "x" * (131_072 - size(resume_base))}]}
+        self.assertEqual(size(submit_equal), 131_072)
+        self.assertEqual(size(resume_equal), 131_072)
+        self.assertLessEqual(len(resume_equal["ocr"][1]["text"]), 20_000)
+        for endpoint, path, equal in (("submit", "/v1/batches", submit_equal),
+                                      ("resume", f"/v1/items/{item_id}/resume", resume_equal)):
+            inside = {**equal}
+            over = {**equal}
+            if endpoint == "submit":
+                inside["files"] = [{"path": equal["files"][0]["path"][:-1]}]
+                over["files"] = [{"path": equal["files"][0]["path"] + "k"}]
+            else:
+                inside["ocr"] = [equal["ocr"][0], {"text": equal["ocr"][1]["text"][:-1]}]
+                over["ocr"] = [equal["ocr"][0], {"text": equal["ocr"][1]["text"] + "x"}]
+            self.assertEqual((size(inside), size(equal), size(over)), (131_071, 131_072, 131_073))
+            for transport in ("direct", "http"):
+                for payload in (inside, equal):
+                    result = (service.submit(payload) if endpoint == "submit" else service.resume(item_id, payload)) if transport == "direct" else self.size_dispatch(service, path, payload)
+                    self.assertTrue(result)
+                invoke = (lambda: service.submit(over) if endpoint == "submit" else service.resume(item_id, over)) if transport == "direct" else (lambda: self.size_dispatch(service, path, over))
+                self.assert_size_rejected_without_effects(invoke, item_id, "JSON request exceeds limit")
+
+        extra = {"text": "a", "unused": "x" * 131_072}
+        self.assert_size_rejected_without_effects(lambda: service.submit(extra), item_id, "JSON request exceeds limit")
+        self.assert_size_rejected_without_effects(lambda: service.resume(item_id, extra), item_id, "JSON request exceeds limit")
+
+    def test_escaped_and_chinese_text_count_toward_canonical_bytes(self):
+        service = self.size_service()
+        item_id = self.ledger.create_batch([{"kind": "text", "spool_path": self.ledger.spool("original")}])["items"][0]["id"]
+        size = lambda value: len(json.dumps(value, ensure_ascii=True, separators=(",", ":")).encode("utf-8"))
+        for endpoint, path in (("submit", "/v1/batches"), ("resume", f"/v1/items/{item_id}/resume")):
+            for text in ('"' * 65_536, "繁體中文" * 5_500):
+                payload = {"text": text}
+                self.assertLess(len(text), 100_000)
+                self.assertGreater(size(payload), 131_072)
+                raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+                if text.startswith("繁"):
+                    self.assertLess(len(raw), 131_072)
+                for transport in ("direct", "http"):
+                    invoke = (lambda: service.submit(payload) if endpoint == "submit" else service.resume(item_id, payload)) if transport == "direct" else (lambda: self.size_dispatch(service, path, body=raw))
+                    self.assert_size_rejected_without_effects(invoke, item_id, "JSON request exceeds limit")
+            accepted = {"text": "繁體中文" * 4_000 + '"' * 1_000}
+            self.assertLess(size(accepted), 131_072)
+            self.assertTrue(service.submit(accepted) if endpoint == "submit" else service.resume(item_id, accepted))
+            self.assertTrue(self.size_dispatch(service, path, body=json.dumps(accepted, ensure_ascii=False).encode("utf-8")))
+            escaped = json.dumps({"text": "繁體中文" * 4_000}, ensure_ascii=True).encode("utf-8")
+            self.assertTrue(self.size_dispatch(service, path, body=escaped))
+
+    def test_raw_http_cap_and_canonical_http_cap_are_independent(self):
+        service = self.size_service()
+        item_id = self.ledger.create_batch([{"kind": "text", "spool_path": self.ledger.spool("original")}])["items"][0]["id"]
+        for path in ("/v1/batches", f"/v1/items/{item_id}/resume"):
+            compact = b'{"text":"a"}'
+            raw_over = compact + b" " * (131_073 - len(compact))
+            self.assert_size_rejected_without_effects(lambda: self.size_dispatch(service, path, body=raw_over), item_id, "JSON request exceeds limit")
+            self.assert_size_rejected_without_effects(lambda: self.size_dispatch(service, path, body=compact, content_length=131_073), item_id, "JSON request exceeds limit")
+
+    def test_real_loopback_submit_resume_size_status_and_no_effects(self):
+        service = self.size_service()
+        item_id = self.ledger.create_batch([{"kind": "text", "spool_path": self.ledger.spool("original")}])["items"][0]["id"]
+        server = ThreadingHTTPServer(("127.0.0.1", 0), handler_factory(service, "service-test-token"))
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            def post(path, raw):
+                request = Request(f"http://127.0.0.1:{server.server_port}{path}", data=raw,
+                                  headers={"Authorization": "Bearer service-test-token", "Content-Type": "application/json"})
+                try:
+                    with urlopen(request, timeout=5) as response:
+                        return response.status, json.loads(response.read())
+                except HTTPError as error:
+                    return error.code, json.loads(error.read())
+
+            for path in ("/v1/batches", f"/v1/items/{item_id}/resume"):
+                status, result = post(path, json.dumps({"text": "a" * 100_000}).encode())
+                self.assertEqual(status, 200)
+                self.assertIn("status" if path.endswith("resume") else "batch_id", result)
+                counts = tuple(self.ledger.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                               for table in ("batches", "items"))
+                spools = {p.name: p.read_bytes() for p in self.ledger.spool_dir.iterdir()}
+                item = dict(self.ledger.db.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone())
+                for raw in (json.dumps({"text": "a" * 100_001}).encode(),
+                            json.dumps({"text": "a" * 150_000}).encode(),
+                            json.dumps({"text": "繁體中文" * 5_500}, ensure_ascii=False).encode()):
+                    status, result = post(path, raw)
+                    self.assertEqual((status, result["error"]), (400, "invalid_request"))
+                    self.assertEqual(counts, tuple(self.ledger.db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                                                   for table in ("batches", "items")))
+                    self.assertEqual(spools, {p.name: p.read_bytes() for p in self.ledger.spool_dir.iterdir()})
+                    self.assertEqual(item, dict(self.ledger.db.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone()))
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def test_size_schema_and_mcp_http_wire_boundary(self):
+        openapi = json.loads((Path(__file__).parents[1] / "contracts/openapi.json").read_text())
+        for name in ("SubmitBatch", "ResumeItem"):
+            schema = openapi["components"]["schemas"][name]
+            self.assertEqual(schema["properties"]["text"]["maxLength"], 100_000)
+            self.assertEqual(schema["x-max-json-utf8-bytes"], 131_072)
+            self.assertIn("raw HTTP", schema["description"])
+        service = self.size_service()
+        handler_type = handler_factory(service, "service-test-token")
+        wires = []
+        class Response:
+            def __init__(self, result): self.result = result
+            def __enter__(self): return self
+            def __exit__(self, *_args): return False
+            def read(self, *_args): return json.dumps(self.result).encode()
+        class Opener:
+            def open(self, request, timeout):
+                wires.append(request.data)
+                handler = object.__new__(handler_type)
+                handler.command, handler.path, handler.rfile = request.get_method(), request.full_url.removeprefix("http://127.0.0.1:4388"), io.BytesIO(request.data)
+                handler.headers = {"Content-Length": str(len(request.data)), "Authorization": request.get_header("Authorization")}
+                return Response(handler._dispatch())
+        client = LocalAPI("service-test-token")
+        server = create_server(client)
+        names = {tool.name for tool in asyncio.run(server.list_tools())}
+        self.assertTrue({"submit_batch", "resume_item"}.issubset(names))
+        base = {"text": "", "urls": [], "files": [], "title": None, "idempotency_key": None}
+        count = (131_072 - len(json.dumps(base).encode())) // 2
+        text = '"' * count
+        with patch("extensions.library.mcp_server.build_opener", return_value=Opener()):
+            result = asyncio.run(server.call_tool("submit_batch", {"text": text}))
+            self.assertTrue(result)
+            item_id = self.ledger.db.execute("SELECT id FROM items ORDER BY created_at DESC LIMIT 1").fetchone()[0]
+            resumed = asyncio.run(server.call_tool("resume_item", {"item_id": item_id, "text": "繁體中文"}))
+            self.assertTrue(resumed)
+        self.assertLessEqual(len(wires[0]), 131_072)
+        self.assertGreaterEqual(len(wires[0]), 131_071)
+        self.assertGreater(len(wires[0]), len(json.dumps(json.loads(wires[0]), ensure_ascii=True, separators=(",", ":")).encode()))
+        self.assertEqual(json.loads(wires[0])["title"], None)
+        self.assertEqual(json.loads(wires[1]), {"text": "繁體中文"})
 
     def test_mcp_submit_files_schema_and_payload(self):
         api = RecordingAPI(); server = create_server(api)
@@ -412,6 +607,33 @@ class LibraryTests(unittest.TestCase):
         self.assertTrue({"title", "file_path", "ocr"}.issubset(tool.inputSchema["properties"]))
         asyncio.run(server.call_tool("resume_item", {"item_id": "i1", "title": "Synthetic", "ocr": [{"method": "manual", "text": "synthetic"}]}))
         self.assertEqual(api.calls, [("POST", "/v1/items/i1/resume", {"title": "Synthetic", "ocr": [{"method": "manual", "text": "synthetic"}]})])
+
+    def test_mcp_text_schema_limit_and_pre_http_validation(self):
+        self.assertEqual((MAX_INGRESS_TEXT_CHARS, MAX_JSON_BYTES), (100_000, 131_072))
+        api = RecordingAPI(); server = create_server(api)
+        tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
+        for name, arguments, path in (("submit_batch", {}, "/v1/batches"),
+                                      ("resume_item", {"item_id": "synthetic-item"}, "/v1/items/synthetic-item/resume")):
+            schema = tools[name].inputSchema["properties"]["text"]
+            string_branch, null_branch = schema["anyOf"]
+            self.assertEqual((string_branch["type"], string_branch["maxLength"]), ("string", MAX_INGRESS_TEXT_CHARS))
+            self.assertEqual(null_branch["type"], "null")
+            self.assertIsNone(schema["default"])
+            for phrase in ("Unicode code points", "json.dumps(value, ensure_ascii=True", "131072 UTF-8 bytes",
+                           "raw HTTP body", "spaces", "optional null fields"):
+                self.assertIn(phrase, string_branch["description"])
+
+            self.assertTrue(asyncio.run(server.call_tool(name, {**arguments, "text": None})))
+            self.assertEqual(api.calls[-1][:2], ("POST", path))
+            self.assertTrue(asyncio.run(server.call_tool(name, {**arguments, "text": "繁" * MAX_INGRESS_TEXT_CHARS})))
+            self.assertEqual(api.calls[-1][:2], ("POST", path))
+            self.assertEqual(len(api.calls[-1][2]["text"]), MAX_INGRESS_TEXT_CHARS)
+            self.assertGreater(len(json.dumps(api.calls[-1][2], ensure_ascii=True, separators=(",", ":")).encode()), MAX_JSON_BYTES)
+            before = len(api.calls)
+            with self.assertRaises(ToolError) as raised:
+                asyncio.run(server.call_tool(name, {**arguments, "text": "a" * (MAX_INGRESS_TEXT_CHARS + 1)}))
+            self.assertIn("at most 100000 characters", str(raised.exception))
+            self.assertEqual(len(api.calls), before)
 
     def test_resume_sanitizes_response_and_url_supplement_is_processed(self):
         ids = fields(); service = LibraryService(self.ledger, LibraryWorker(self.ledger, ConfirmingNative()), LibrarySearch(FakeReader({"id": 1, "content": "", "custom_fields": []}), ids), FakeWriter(), ids)

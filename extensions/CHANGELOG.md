@@ -1,5 +1,10 @@
 # Extensions changelog
 
+## Library 0.3.0 source release / owner acceptance revision 3 — 2026-10-05
+
+- Released independently reviewed source adapters, public stable identity/deduplication, local OCR indexing, metadata-only backfill, strict authenticated routes and text/envelope limits. Canonical prose contract revision 2 now agrees with the 0.3.0 OpenAPI and marks future stage4 interfaces separately.
+- Owner deployed 0.3.0. Actual native changed-content OCR PATCH/readback and unchanged original PDF SHA passed on a genuine requirements-derived scan. Verified public WeChat author/date backfill preserved normalized source body. Current deferred MCP calls and the registered protocol server worked. Fresh Edge capture is 0x0: real XHS source acceptance remains UNVERIFIED, not waived by release. UI, full migration/restore, offsite, remote and reboot gates remain open.
+
 ## Query revision 2 — owner deployed acceptance 2026-10-05
 
 - Frozen bounded cross-script retrieval passed independent query QA (15 synthetic tests) and owner actual deployed registered-MCP21/21 questions, including both no-answer cases and cross-article source coverage. Exact source offsets and excerpt hashes matched independently read native originals. No vector database or new paid inference was added. Historical dates/offers remain archived claims, not current-truth verification.

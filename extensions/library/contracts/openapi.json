@@ -1,18 +1,953 @@
 {
   "openapi": "3.0.3",
-  "info": {"title": "Paperless Library local API", "version": "0.2.0"},
-  "servers": [{"url": "http://127.0.0.1:4388"}],
-  "paths": {
-    "/health": {"get": {"responses": {"200": {"description": "version"}}}},
-    "/v1/batches": {"post": {"requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SubmitBatch"}}}}, "responses": {"200": {"description": "created"}}}},
-    "/v1/batches/{id}": {"get": {"responses": {"200": {"description": "status"}}}},
-    "/v1/batches/{id}/cancel": {"post": {"responses": {"200": {"description": "cancelled"}}}},
-    "/v1/items/{id}/resume": {"post": {"requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/ResumeItem"}}}}, "responses": {"200": {"description": "sanitized queued item"}}}},
-    "/v1/items/{id}/reanalyze": {"post": {"responses": {"200": {"description": "queued"}}}},
-    "/v1/search": {"post": {"responses": {"200": {"description": "matches"}}}},
-    "/v1/documents/{id}/evidence": {"get": {"responses": {"200": {"description": "evidence"}}}},
-    "/v1/documents/{id}/state": {"patch": {"responses": {"200": {"description": "readback"}}}},
-    "/v1/migrate": {"post": {"responses": {"200": {"description": "migration batch"}}}}
+  "info": {
+    "title": "Paperless Library local API",
+    "version": "0.3.0"
   },
-  "components": {"schemas": {"SubmitBatch": {"type": "object", "properties": {"text": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}, "files": {"type": "array", "items": {"type": "object", "required": ["path"], "properties": {"path": {"type": "string"}}}}, "title": {"type": "string"}, "idempotency_key": {"type": "string"}}}, "ResumeItem": {"type": "object", "properties": {"text": {"type": "string"}, "title": {"type": "string"}, "file_path": {"type": "string"}, "ocr": {"type": "array", "maxItems": 32, "items": {"type": "object"}}}}}}
+  "servers": [
+    {
+      "url": "http://127.0.0.1:4388",
+      "description": "Loopback only; owner managed authenticated tailnet bridge is separate"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Health"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/batches": {
+      "post": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Batch"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitBatch"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/batches/{id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Batch"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ]
+      }
+    },
+    "/v1/batches/{id}/cancel": {
+      "post": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Batch"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ]
+      }
+    },
+    "/v1/items/{id}/resume": {
+      "post": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Item"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumeItem"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ],
+        "description": "Queued items may provide source supplements. Confirmed URL items may backfill verified public metadata only and remain confirmed."
+      }
+    },
+    "/v1/items/{id}/reanalyze": {
+      "post": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Item"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reanalyze"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Id"
+          }
+        ]
+      }
+    },
+    "/v1/search": {
+      "post": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Search"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/documents/{id}/evidence": {
+      "get": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Evidence"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/documents/{id}/state": {
+      "patch": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/State"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StateRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ]
+      }
+    },
+    "/v1/migrate": {
+      "post": {
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Batch"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Migrate"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "parameters": {
+      "Id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "DocumentId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "SubmitBatch": {
+        "type": "object",
+        "x-max-json-utf8-bytes": 131072,
+        "description": "The complete JSON object, including optional and extra fields, must be at most 131072 UTF-8 bytes after json.dumps(value, ensure_ascii=True, separators=(\",\", \":\")). The raw HTTP Content-Length/body must also be at most 131072 bytes. MCP uses the same HTTP validation; its serializer includes optional null fields and spaces in the raw body.",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "description": "At most 100000 Unicode code points; JSON escape expansion also counts toward the complete canonical object byte cap.",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "nullable": true
+          },
+          "source_label": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 500
+          },
+          "idempotency_key": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OcrSupplement": {
+        "type": "object",
+        "properties": {
+          "image_url": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "method": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResumeItem": {
+        "type": "object",
+        "x-max-json-utf8-bytes": 131072,
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "description": "At most 100000 Unicode code points; JSON escape expansion also counts toward the complete canonical object byte cap."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "file_path": {
+            "type": "string"
+          },
+          "ocr": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OcrSupplement"
+            },
+            "maxItems": 32
+          },
+          "canonical_url": {
+            "type": "string"
+          },
+          "publish_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "operator-public",
+              "public-html"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "description": "The complete JSON object, including optional and extra fields, must be at most 131072 UTF-8 bytes after json.dumps(value, ensure_ascii=True, separators=(\",\", \":\")). The raw HTTP Content-Length/body must also be at most 131072 bytes. MCP uses the same HTTP validation; its serializer includes optional fields and spaces in the raw body. Confirmed URL items accept only canonical_url, publish_date, author, fetched_at and provenance=operator-public; no title, text, file_path or OCR. This is a metadata-only native custom-field revision with exact reader readback."
+      },
+      "Reanalyze": {
+        "type": "object",
+        "properties": {
+          "analysis_version": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "analysis_version"
+        ],
+        "additionalProperties": false
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "StateRequest": {
+        "type": "object",
+        "properties": {
+          "read": {
+            "type": "boolean"
+          },
+          "starred": {
+            "type": "boolean"
+          },
+          "pending": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Migrate": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "public_locator": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "document_id": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "stage"
+        ],
+        "additionalProperties": false
+      },
+      "Counts": {
+        "type": "object",
+        "properties": {
+          "queued": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "fetching": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "needs_login": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "needs_ocr": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "enriching": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "importing": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "confirmed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "duplicate": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cancelled": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "partial": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "blocked": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "queued",
+          "fetching",
+          "needs_login",
+          "needs_ocr",
+          "enriching",
+          "importing",
+          "confirmed",
+          "duplicate",
+          "failed",
+          "cancelled",
+          "partial",
+          "blocked"
+        ],
+        "additionalProperties": false
+      },
+      "Batch": {
+        "type": "object",
+        "properties": {
+          "batch_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/Counts"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          }
+        },
+        "required": [
+          "batch_id",
+          "status",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "Search": {
+        "type": "object",
+        "properties": {
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                },
+                "canonical_url": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "published_at": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "completeness": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "no_match": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "variants",
+          "matches",
+          "no_match"
+        ],
+        "additionalProperties": false
+      },
+      "Evidence": {
+        "type": "object",
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "document_id": {
+                  "type": "integer"
+                },
+                "canonical_url": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "title": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "published_at": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "fetched_at": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "completeness": {
+                  "type": "string"
+                },
+                "section": {
+                  "type": "string"
+                },
+                "start": {
+                  "type": "integer"
+                },
+                "end": {
+                  "type": "integer"
+                },
+                "excerpt": {
+                  "type": "string"
+                },
+                "excerpt_hash": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "State": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "starred": {
+            "type": "boolean"
+          },
+          "pending": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "read",
+          "starred",
+          "pending"
+        ],
+        "additionalProperties": false
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "Health": {
+        "description": "Version",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Health"
+            }
+          }
+        }
+      },
+      "Batch": {
+        "description": "Batch and blocked count",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Batch"
+            }
+          }
+        }
+      },
+      "Item": {
+        "description": "Sanitized item",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Item"
+            }
+          }
+        }
+      },
+      "Search": {
+        "description": "Bounded matches",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Search"
+            }
+          }
+        }
+      },
+      "Evidence": {
+        "description": "Exact source evidence",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Evidence"
+            }
+          }
+        }
+      },
+      "State": {
+        "description": "Native readback",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/State"
+            }
+          }
+        }
+      },
+      "Error": {
+        "description": "Sanitized error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
 }
