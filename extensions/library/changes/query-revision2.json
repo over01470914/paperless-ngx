@@ -1,0 +1,54 @@
+{
+  "card": "t_e937f243",
+  "revision": 2,
+  "recorded_at": "2026-10-05T18:46:35+08:00",
+  "timezone": "Asia/Taipei",
+  "baseline": "ec0397bb1d7534ac8348c7fea640a8fddec3101c",
+  "shared_head_at_review": "b3a30cd9375dbd4e31a394321514fdd1a5423669",
+  "branch": "naya/article-intelligence",
+  "paperless_version": "3.2.1",
+  "library_version_at_implementation": "0.2.0",
+  "library_version_observed_at_review": "0.3.0",
+  "version_owner": "source lane; query revision does not bump package version",
+  "query_code_sha256": "163c5bcc97385374de227b2939d51fff2bd5412d2cd62d0e74fd47aa51c09e0e",
+  "query_test_sha256": "38b7111863e0d5ee663fa93adab442122551816b685c702b0e74e4097d543823",
+  "owner_frozen_source_sha256_before_query_correction": "c99dfe3b26b808bc3737b5ad11187384af960811f04d3c06d0c071a8f351ba67",
+  "contract": "extensions/LIBRARY_CONTRACT.md revision 1; public search and evidence response shapes preserved",
+  "paths": [
+    "extensions/library/search.py",
+    "extensions/library/tests/test_search.py",
+    "extensions/library/changes/query-revision2.json",
+    "extensions/library/QUERY.md"
+  ],
+  "focused_tests": [
+    "extensions/library/tests/test_search.py"
+  ],
+  "verification": {
+    "focused_search": "15 tests passed",
+    "library_discovery": "67 tests run; 3 failures and 9 errors in concurrently edited source/maintenance lanes, including the read-only 0.2.0 versus 0.3.0 legacy assertion; no focused query test failed",
+    "limited_compile": "passed for search.py and test_search.py",
+    "git_diff_check": "passed"
+  },
+  "limits": {
+    "query_variants": 8,
+    "native_gets_per_variant": 1,
+    "native_page_size": 24,
+    "candidate_ids_per_variant": 12,
+    "candidate_ids_total": 96,
+    "document_detail_reads": 32,
+    "matches": 8,
+    "query_characters": 512,
+    "evidence_hits_per_document": 8,
+    "excerpt_characters": 1200,
+    "excerpt_characters_per_document": 9600,
+    "serialized_evidence_response_characters": 12000
+  },
+  "acceptance": "Synthetic query tests only. Owner's read-only frozen-source pre-correction probe reported 20/21; the remaining historical-promotion miss has no per-variant candidate/detail-read trace. Corrected query SHA has not undergone owner native or deployed acceptance.",
+  "known_limitations": [
+    "Lexical first-page retrieval can miss relevant documents beyond the fixed native and detail-read caps.",
+    "Traditional/simplified conversion depends on installed OpenCC.",
+    "Conservative citation query allowlist can omit unfamiliar identity parameters.",
+    "A dated archive excerpt cannot establish whether an offer remains valid today; current validity is unverified.",
+    "The owner must provide a bounded native candidate/detail-read trace to distinguish retrieval-cap misses from evidence-gate misses."
+  ]
+}

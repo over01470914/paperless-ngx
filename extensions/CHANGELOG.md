@@ -1,5 +1,10 @@
 # Extensions changelog
 
+## Query revision 2 — owner deployed acceptance 2026-10-05
+
+- Frozen bounded cross-script retrieval passed independent query QA (15 synthetic tests) and owner actual deployed registered-MCP21/21 questions, including both no-answer cases and cross-article source coverage. Exact source offsets and excerpt hashes matched independently read native originals. No vector database or new paid inference was added. Historical dates/offers remain archived claims, not current-truth verification.
+- Source SHA remained unchanged during the MCP benchmark. This query milestone does not complete XHS, daily UI, full migration, backup/restore or remote acceptance. Detailed native/MCP results stay private.
+
 ## Owner stage4 specification revision 2 — 2026-10-05
 
 - Pinned bounded batch history, deterministic resumable migration cursors/snapshot identity, allowlisted native-session UI bridge, protected attachment staging and caller-object permissions before dispatching stage4 writers. State PATCH must use the actual caller native session/CSRF, not only the configured service writer. This is a future contract, not shipped UI or migration.

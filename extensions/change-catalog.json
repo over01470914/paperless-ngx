@@ -1,4 +1,16 @@
 {
+  "query_revision2_owner_release": {
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-05",
+    "timezone": "Asia/Taipei",
+    "card": "paperless-radar/t_e937f243",
+    "owner_card": "paperless-radar/t_d7c39023",
+    "version": "query revision 1 -> 2; deployed companion Library 0.3.0; native 3.2.1 unchanged",
+    "paths": ["extensions/library/search.py", "extensions/library/tests/test_search.py", "extensions/library/QUERY.md", "extensions/library/changes/query-revision2.json", "extensions/CHANGELOG.md", "extensions/change-catalog.json"],
+    "contract": "existing search/evidence API shapes unchanged; semantic behavior documented in QUERY.md; source release aligns canonical contract revision 2",
+    "verification": ["independent query QA15/15 PASS", "actual deployed exact registered MCP21/21 PASS including both no-answer cases and cross-article coverage", "native original evidence offsets and excerpt SHA256 exact", "frozen search.py SHA unchanged 163c5bcc97385374de227b2939d51fff2bd5412d2cd62d0e74fd47aa51c09e0e", "git diff --check and exact staged-path catalog check"],
+    "limits": ["finite benchmark not universal correctness", "historical offer/version retrieval not present-day fact checking", "full daily Library goal remains incomplete", "private source/tool receipts remain outside Git"]
+  },
   "owner_stage4_spec_revision2": {
     "project": "over01470914/paperless-ngx",
     "date": "2026-10-05",
