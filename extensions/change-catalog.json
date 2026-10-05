@@ -1,4 +1,15 @@
 {
+  "article_intake_owner_revision1": {
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-06",
+    "timezone": "Asia/Taipei",
+    "card": "paperless-radar/t_d7c39023",
+    "version": "article intake operational acceptance absent -> revision 1; Library API/native unchanged",
+    "paths": ["extensions/library/ARTICLE_INTAKE.md", "extensions/CHANGELOG.md", "extensions/change-catalog.json"],
+    "contract": "latest owner-card narrow scope: existing readable article intake and exact native readback only; no tracked implementation changes",
+    "verification": ["actual restricted-native-reader 279/279 source/hash/identity/metadata readbacks PASS", "259 newly stored,20 existing deduplicated,0 final import failures", "all25 existing native documents preserved; native count25->284", "14 native MIME rejections recovered with downloaded PDF/hash/embedded-original checks and exact migration verification", "live worker reconciled14 known native-success tasks; terminal batch20duplicate/259partial", "actual registered MCP read_evidence on recovered article PASS", "operational receipt assertions and exact staged catalog-path validation PASS"],
+    "limits": ["125 records have no readable source body", "legacy unknown/partial extraction completeness retained, not represented as full-source verification", "private receipts/source/PDF/config excluded", "operational acceptance only; no UI/XHS/offsite/remote-device/restore/source-release claim", "pre-existing unrelated worktree changes preserved"]
+  },
   "maintenance_revision1_owner_source_release": {
     "project": "over01470914/paperless-ngx",
     "date": "2026-10-05",

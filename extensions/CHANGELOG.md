@@ -1,5 +1,10 @@
 # Extensions changelog
 
+## Article intake operational acceptance revision 1 — 2026-10-06
+
+- Latest narrowed owner request completed: all 279 readable legacy articles now have exact restricted-native-reader source/hash/metadata readback; 259 newly stored, 20 existing deduplicated, zero unresolved import failures. All 25 pre-existing native documents were preserved. The 125 no-body records were not fabricated. Legacy unknown/partial source completeness remains explicit.
+- Recovered 14 native code/HTML MIME rejections using local PDF transport with exact embedded UTF-8 originals, downloaded-file hash checks and native source readback; the live worker reconciled the known successful tasks. Registered MCP evidence works on a recovered article. See `extensions/library/ARTICLE_INTAKE.md`. This record releases no implementation code or pending UI/XHS/backup features; private receipts remain outside Git.
+
 ## Maintenance revision 1 — reviewed source release 2026-10-05
 
 - Added protected native export/online queue snapshots, pending file/OCR/supplement reference capture and an isolated same-version no-port restore drill with full document/original/metadata/permission comparison and owned-resource cleanup. Independent maintenance QA13/13 and schema/compile/scope checks passed. This commit installs no schedule, performs no live restore and proves no offsite backup; final owner operations follow full migration.
