@@ -1,0 +1,5 @@
+# Operator-only transport runner, receipts, protocol schema and smoke scripts.
+.operator/
+__pycache__/
+tests/__pycache__/
+*.pyc

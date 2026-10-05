@@ -11,6 +11,58 @@
     "verification": ["16 Python tests PASS", "JS default-view pagination regression PASS", "Python compileall PASS", "node --check PASS", "native Docker Compose config PASS", "live import uploaded=20; rerun uploaded=0 duplicates=20", "exact document readback=20, unique URLs=20", "authenticated browser default map/filter/search/detail/list verified", "390px mobile: no horizontal overflow", "native exporter manifest=20 document records"],
     "limits": ["Windows offline; only Mac-side Tailscale URL verified", "same-host backup, restore/reboot unverified", "full migration and daily sync not enabled"]
   },
+  "paperless_library": {
+    "version": "0.2.0 stage 1 parser and OCR QA correction",
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-05",
+    "timezone": "Asia/Taipei",
+    "source_card": "paperless-radar/t_9248faca",
+    "owner_card": "paperless-radar/t_d7c39023",
+    "owner_acceptance_revision": 1,
+    "owner_verification": ["Actual deployed loopback health200 and unauthorized operations401", "Current dialogue registered MCP submit/status/search/evidence/resume invoked", "Real TXT/PDF/direct-body and browser-verified canonical WeChat supplement native imports confirmed", "Both original-file download SHA256 values exactly match submissions", "Exact native evidence offsets and hashes verified for three real records"],
+    "owner_limits": ["Original WeChat short-link supplement remains blocked without canonical identity", "Search ranking and full21question acceptance incomplete", "Existing global Tailscale bridge conflicts with strict loopback isolation", "XHS/local OCR/dailyUI/fullmigration/fullrestore/offsite/remote/reboot incomplete"],
+    "contract": "extensions/LIBRARY_CONTRACT.md revision 1",
+    "production_paths": [
+      "extensions/library/__init__.py",
+      "extensions/library/model.py",
+      "extensions/library/app.py",
+      "extensions/library/ledger.py",
+      "extensions/library/sources.py",
+      "extensions/library/native.py",
+      "extensions/library/worker.py",
+      "extensions/library/search.py",
+      "extensions/library/enrich.py",
+      "extensions/library/legacy.py",
+      "extensions/library/service.py",
+      "extensions/library/mcp_server.py"
+    ],
+    "support_paths": [
+      "extensions/LIBRARY_CONTRACT.md",
+      "extensions/library/.gitignore",
+      "extensions/library/ACCEPTANCE.md",
+      "extensions/library/README.md",
+      "extensions/library/skill/SKILL.md",
+      "extensions/library/contracts/openapi.json",
+      "extensions/library/tests/test_library.py",
+      "extensions/CHANGELOG.md",
+      "extensions/change-catalog.json"
+    ],
+    "tests": [
+      "/Users/garbagod/.local/share/paperless-library/venv/bin/python -m unittest discover -s extensions/library/tests -v (30 synthetic tests PASS)",
+      "PYTHONPYCACHEPREFIX=/private/tmp/paperless-library-pycache /Users/garbagod/.local/share/paperless-library/venv/bin/python -m compileall -q -x '/\\.operator/' extensions/library",
+      "git diff --check -- extensions/library extensions/CHANGELOG.md extensions/change-catalog.json"
+    ],
+    "limitations": [
+      "Synthetic-only verification; no live Paperless, source, XHS/Edge, OCR, deployment, migration, or MCP-profile registration claim",
+      "Handler routing tests are direct dispatch, not a socket smoke; parent must verify the fixed 127.0.0.1 listener after bootstrap",
+      "Native post_document scalar-task, task ownership, and set_permissions shapes are mocked against the documented v10 contract and need parent real-native confirmation",
+      "Original file bytes are tested in outbound multipart only; native download/hash readback is not implemented and needs parent real-native QA",
+      "Reader search parameter and legacy numeric-field behavior are synthetic mocks; parent must rerun the real 21-question fixture after service startup",
+      "WeChat gate detection, OCR content PATCH, and reanalysis native field readback are synthetic only; parent must validate restricted-reader behavior against native v3.2.1",
+      "Original binary download/hash verification remains unimplemented; production OCR content patch and reanalysis permission behavior need parent native QA",
+      "XHS stage 1 remains durable needs_login pending an authorized visible Edge adapter"
+    ]
+  },
   "article_radar": {
     "version": "0.1.0",
     "contract": "extensions/ARTICLE_RADAR_SPEC.md revision 2",

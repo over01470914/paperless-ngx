@@ -1,0 +1,18 @@
+{
+  "openapi": "3.0.3",
+  "info": {"title": "Paperless Library local API", "version": "0.2.0"},
+  "servers": [{"url": "http://127.0.0.1:4388"}],
+  "paths": {
+    "/health": {"get": {"responses": {"200": {"description": "version"}}}},
+    "/v1/batches": {"post": {"requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SubmitBatch"}}}}, "responses": {"200": {"description": "created"}}}},
+    "/v1/batches/{id}": {"get": {"responses": {"200": {"description": "status"}}}},
+    "/v1/batches/{id}/cancel": {"post": {"responses": {"200": {"description": "cancelled"}}}},
+    "/v1/items/{id}/resume": {"post": {"requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/ResumeItem"}}}}, "responses": {"200": {"description": "sanitized queued item"}}}},
+    "/v1/items/{id}/reanalyze": {"post": {"responses": {"200": {"description": "queued"}}}},
+    "/v1/search": {"post": {"responses": {"200": {"description": "matches"}}}},
+    "/v1/documents/{id}/evidence": {"get": {"responses": {"200": {"description": "evidence"}}}},
+    "/v1/documents/{id}/state": {"patch": {"responses": {"200": {"description": "readback"}}}},
+    "/v1/migrate": {"post": {"responses": {"200": {"description": "migration batch"}}}}
+  },
+  "components": {"schemas": {"SubmitBatch": {"type": "object", "properties": {"text": {"type": "string"}, "urls": {"type": "array", "items": {"type": "string"}}, "files": {"type": "array", "items": {"type": "object", "required": ["path"], "properties": {"path": {"type": "string"}}}}, "title": {"type": "string"}, "idempotency_key": {"type": "string"}}}, "ResumeItem": {"type": "object", "properties": {"text": {"type": "string"}, "title": {"type": "string"}, "file_path": {"type": "string"}, "ocr": {"type": "array", "maxItems": 32, "items": {"type": "object"}}}}}}
+}
