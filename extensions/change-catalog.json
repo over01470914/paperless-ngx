@@ -1,4 +1,15 @@
 {
+  "owner_acceptance_revision2": {
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-05",
+    "timezone": "Asia/Taipei",
+    "card": "paperless-radar/t_d7c39023",
+    "version": "owner acceptance revision 1 -> 2; stage4 specification absent -> revision 1; Library runtime/API unchanged 0.2.0",
+    "paths": ["extensions/library/ACCEPTANCE.md", "extensions/LIBRARY_STAGE4_SPEC.md", "extensions/CHANGELOG.md", "extensions/change-catalog.json"],
+    "contract": "extensions/LIBRARY_CONTRACT.md revision 1 unchanged; extensions/LIBRARY_STAGE4_SPEC.md revision 1 is a future implementation specification",
+    "verification": ["actual deployed 10/50 repeated TXT/PDF batches: duplicate 10/50, exact item ID sets, existing native document IDs, no growth", "process restart while 50-item batch pending recovered all items", "registered MCP native read/star/pending write with independent reader/writer readback and reset", "native reader PATCH403; reader/writer users403", "canonical WeChat full SOURCE/title exact normalized hash", "actual deployed benchmark18/21: opc/layout/personal-token fail; matched raw offsets/hashes pass", "native source inspection verifies ui_settings current identity and profile absence of ID", "git diff --check and catalog exact-path JSON check"],
+    "limits": ["mixed-source URL batches not accepted", "XHS and local OCR awaiting source implementation/real acceptance", "full metadata migration/UI/large restore not implemented by this revision", "strict host loopback isolation, offsite, remote device and reboot unverified", "public citation tracking parameters remain a scoped source/query correction"]
+  },
   "deployment_and_acceptance": {
     "project": "over01470914/paperless-ngx",
     "date": "2026-10-05",

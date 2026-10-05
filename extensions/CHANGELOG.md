@@ -1,5 +1,11 @@
 # Extensions changelog
 
+## Owner acceptance/documentation revision 2 — 2026-10-05
+
+- Owner t_d7c39023 exercised actual deployed 10/50 repeated TXT/PDF batches and a pending-batch process restart: exact duplicate/item counts, preserved native IDs and no document growth. Registered read/star/pending writes were independently read through native reader/writer then restored. Reader writes and both users endpoints returned 403. Full canonical WeChat SOURCE/title fidelity passed; known date/author transfer remains incomplete. Actual deployed 21-query benchmark remains 18/21, not full acceptance.
+- Added `extensions/LIBRARY_STAGE4_SPEC.md` revision 1: explicit complete metadata/state migration, bounded durable chunks, UI/native-session/CSRF boundaries and full isolated restore gates. Source inspection establishes `/api/ui_settings/` as the identity/permission endpoint; `/api/profile/` lacks a user ID and includes a token that must not be relayed. This is a stage-4 specification, not deployed functionality.
+- Application versions and the stage-1 API contract are unchanged. Stage-2 source/OCR and stage-3 ranking run in disjoint native Kanban writer lanes; maintenance is separately scoped. No migration, offsite transfer, browser-login bypass or shared-host bridge change was performed by this documentation revision.
+
 ## Paperless Library 0.2.0 stage 1 — 2026-10-05
 
 - Owner acceptance revision 1 (t_d7c39023): deployed loopback service and invoked current-dialogue registered MCP tools. Genuine TXT/PDF/direct-body inputs and a browser-verified canonical WeChat text supplement confirmed in native Paperless; both downloaded original files match submitted SHA-256, and three records' native evidence offsets/hashes match. See extensions/library/ACCEPTANCE.md. This is bounded partial acceptance, not the complete daily Library goal: short-link identity, ranking, host-wide loopback isolation, XHS/OCR, UI, complete migration and full restore remain open. Runtime credentials/source material/receipts remain private outside Git.
