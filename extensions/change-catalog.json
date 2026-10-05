@@ -1,0 +1,47 @@
+{
+  "deployment_and_acceptance": {
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-05",
+    "timezone": "Asia/Taipei",
+    "card": "paperless-radar/t_cdb93f5d",
+    "version": "absent -> article-radar 0.1.0; deployment/docs revision 1; spec revision 2",
+    "paths": ["extensions/.gitignore", "extensions/ARTICLE_RADAR_SPEC.md", "extensions/ACCEPTANCE.md", "extensions/deploy/compose.yml", "extensions/deploy/README.md"],
+    "contract": "extensions/ARTICLE_RADAR_SPEC.md revision 2; native Paperless API v10 unchanged",
+    "module_boundaries": "Native core unchanged; importer, fixed-upstream proxy and static UI independently removable",
+    "verification": ["16 Python tests PASS", "JS default-view pagination regression PASS", "Python compileall PASS", "node --check PASS", "native Docker Compose config PASS", "live import uploaded=20; rerun uploaded=0 duplicates=20", "exact document readback=20, unique URLs=20", "authenticated browser default map/filter/search/detail/list verified", "390px mobile: no horizontal overflow", "native exporter manifest=20 document records"],
+    "limits": ["Windows offline; only Mac-side Tailscale URL verified", "same-host backup, restore/reboot unverified", "full migration and daily sync not enabled"]
+  },
+  "article_radar": {
+    "version": "0.1.0",
+    "contract": "extensions/ARTICLE_RADAR_SPEC.md revision 2",
+    "production_paths": [
+      "extensions/article_radar/radar.py",
+      "extensions/article_radar/migrate.py",
+      "extensions/article_radar/server.py",
+      "extensions/article_radar/static/index.html",
+      "extensions/article_radar/static/app.js",
+      "extensions/article_radar/static/style.css"
+    ],
+    "support_paths": [
+      "extensions/article_radar/.gitignore",
+      "extensions/article_radar/README.md",
+      "extensions/article_radar/IMPLEMENTATION.md",
+      "extensions/article_radar/tests/app_default_view.test.mjs",
+      "extensions/article_radar/tests/test_radar.py",
+      "extensions/CHANGELOG.md",
+      "extensions/change-catalog.json"
+    ],
+    "tests": [
+      "python3 -m unittest discover -s extensions/article_radar/tests -v",
+      "PYTHONPYCACHEPREFIX=extensions/article_radar/.pycache python3 -m compileall -q extensions/article_radar",
+      "node --check extensions/article_radar/static/app.js",
+      "node extensions/article_radar/tests/app_default_view.test.mjs"
+    ],
+    "limitations": [
+      "Operator reports first live import failed at first task with zero confirmed documents under old url field type; no successful live import is claimed by the product writer",
+      "No live Paperless migration, runtime, browser or deployment validation by the product writer",
+      "Native documents hidden by API permissions cannot be deduplicated",
+      "Proxy serves HTTP only and caps upstream responses at 32 MiB"
+    ]
+  }
+}

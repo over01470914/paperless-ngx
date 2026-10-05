@@ -1,0 +1,58 @@
+name: paperless-radar
+services:
+  broker:
+    image: docker.io/valkey/valkey:9-alpine
+    restart: unless-stopped
+    volumes:
+      - broker:/data
+  db:
+    image: docker.io/library/postgres:18
+    restart: unless-stopped
+    env_file: ${PAPERLESS_SECRETS_FILE:?Set external secrets file}
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperless -d paperless"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:3.2.1
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      broker:
+        condition: service_started
+    ports:
+      - "4386:8000"
+    env_file: ${PAPERLESS_SECRETS_FILE:?Set external secrets file}
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBHOST: db
+      PAPERLESS_DBNAME: paperless
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_TIME_ZONE: Asia/Taipei
+      PAPERLESS_OCR_LANGUAGES: chi-sim chi-tra
+      PAPERLESS_OCR_LANGUAGE: chi_sim+chi_tra+eng
+      PAPERLESS_OCR_MODE: auto
+      PAPERLESS_TASK_WORKERS: "1"
+      PAPERLESS_THREADS_PER_WORKER: "2"
+      PAPERLESS_ALLOWED_HOSTS: 127.0.0.1,localhost,100.88.199.90,192.168.0.100,webserver
+      PAPERLESS_CSRF_TRUSTED_ORIGINS: http://127.0.0.1:4386,http://100.88.199.90:4386,http://127.0.0.1:4387,http://100.88.199.90:4387
+    volumes:
+      - data:/usr/src/paperless/data
+      - media:/usr/src/paperless/media
+      - ${PAPERLESS_RUNTIME_DIR:?Set external runtime directory}/export:/usr/src/paperless/export
+      - ${PAPERLESS_RUNTIME_DIR:?Set external runtime directory}/consume:/usr/src/paperless/consume
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/accounts/login/', timeout=5)"]
+      interval: 20s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+volumes:
+  broker:
+  postgres:
+  data:
+  media:

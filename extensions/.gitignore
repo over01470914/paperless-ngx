@@ -1,0 +1,9 @@
+# Operator/runtime artifacts are local evidence, not public source.
+article_radar/appserver*.json
+article_radar/appserver_*.py
+article_radar/writer-brief.md
+article_radar/.pycache/
+article_radar/__pycache__/
+article_radar/tests/__pycache__/
+*.env
+*.log

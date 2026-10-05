@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文章地圖 · Paperless</title>
+  <link rel="stylesheet" href="/radar/style.css">
+  <script src="/radar/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Paperless <span>文章地圖</span></div>
+    <nav aria-label="主導覽"><a href="/">Paperless 文件庫</a><a class="active" href="/radar/" aria-current="page">文章地圖</a></nav>
+  </header>
+  <main>
+    <div class="intro"><div><h1>文章地圖</h1><p>依原始文章與已匯入的分析資料整理；時效標記是閱讀提示，並非事實查核。</p></div><span id="count" aria-live="polite"></span></div>
+    <section class="controls" aria-label="篩選文章">
+      <label>搜尋<input id="search" type="search" placeholder="標題、摘要、來源…"></label>
+      <label>類別<select id="category"><option value="">所有類別</option></select></label>
+      <label>時效<select id="freshness"><option value="">所有時效</option><option value="fresh">未達提醒門檻</option><option value="stale">需重看</option><option value="evergreen">長期適用</option><option value="unknown">日期不足</option></select></label>
+      <label class="check"><input id="actionable" type="checkbox">只看高行動價值</label>
+      <div class="view-toggle" role="group" aria-label="檢視方式"><button id="map-view" type="button" aria-pressed="true">地圖</button><button id="list-view" type="button" aria-pressed="false">清單</button></div>
+    </section>
+    <div id="status" class="status" role="status">正在讀取文件…</div>
+    <section id="results" aria-label="文章結果"></section>
+  </main>
+  <dialog id="detail"><div class="dialog-head"><h2 id="detail-title"></h2><button id="close-detail" type="button" aria-label="關閉詳情">×</button></div><div id="detail-body"></div></dialog>
+</body>
+</html>

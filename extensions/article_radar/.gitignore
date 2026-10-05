@@ -1,0 +1,8 @@
+__pycache__/
+.pycache/
+*.pyc
+appserver_writer.py
+appserver_fix.py
+writer-brief.md
+appserver-receipt.json
+appserver-*-receipt.json
