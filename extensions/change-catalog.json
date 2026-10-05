@@ -1,4 +1,15 @@
 {
+  "owner_stage4_spec_revision2": {
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-05",
+    "timezone": "Asia/Taipei",
+    "card": "paperless-radar/t_d7c39023",
+    "version": "stage4 specification revision 1 -> 2; deployed Library API unchanged 0.2.0",
+    "paths": ["extensions/LIBRARY_STAGE4_SPEC.md", "extensions/CHANGELOG.md", "extensions/change-catalog.json"],
+    "contract": "stage4 future API/bridge decisions only; stage2/3 source review and owner release still gated",
+    "verification": ["native source inspection: ui_settings user ID/permissions and OwnedObjectSerializer user_can_change", "read-only current legacy preflight: registry/raw/index 404, readable 279, unreadable 125, existing 20, remaining 259", "actual protected pre-upgrade native export24 and online SQLite snapshot65items/6batches integrityok", "actual existing unauthenticated Radar desktop/mobile screenshots: 1440x900/390x844, no horizontal overflow, no fabricated articles", "unchanged frozen query SHA direct native benchmark20/21: one historical-claim retrieval regression returned to the same QA lane", "current registered MCP scanned requirements-derived PDF: durable needs_ocr, no native document or fake OCR success", "git diff --check; catalog exact-path JSON validation"],
+    "limits": ["specification is not stage4 implementation or deployment", "source/query/maintenance review incomplete", "frozen direct native diagnostic is not deployed MCP benchmark acceptance", "pre-upgrade24 snapshot is not full archive restore or offsite", "genuine requirements-derived scanned PDF is not an XHS source sample", "native authenticated browser, real XHS visible notes, remote peer, full migration and restore remain unverified"]
+  },
   "owner_acceptance_revision2": {
     "project": "over01470914/paperless-ngx",
     "date": "2026-10-05",

@@ -1,5 +1,11 @@
 # Extensions changelog
 
+## Owner stage4 specification revision 2 — 2026-10-05
+
+- Pinned bounded batch history, deterministic resumable migration cursors/snapshot identity, allowlisted native-session UI bridge, protected attachment staging and caller-object permissions before dispatching stage4 writers. State PATCH must use the actual caller native session/CSRF, not only the configured service writer. This is a future contract, not shipped UI or migration.
+- Fresh read-only corpus preflight remains 404 records, 279 readable and 125 unreadable; 20 already match native and 259 remain. A protected pre-release native24/queue65items6batches checkpoint succeeded, not a full-archive restore or offsite backup. Real existing unauthenticated Radar desktop/mobile screenshots show honest login/empty states without overflow; they do not prove the new Library UI.
+- Frozen query implementation's actual native diagnostic is 20/21, with one historical-claim retrieval regression handed to its same QA lane. A genuine requirements-derived scanned PDF is durably needs_ocr via current registered MCP; no fake OCR/XHS acceptance. Source/query/maintenance release and all remaining owner gates stay open.
+
 ## Owner acceptance/documentation revision 2 — 2026-10-05
 
 - Owner t_d7c39023 exercised actual deployed 10/50 repeated TXT/PDF batches and a pending-batch process restart: exact duplicate/item counts, preserved native IDs and no document growth. Registered read/star/pending writes were independently read through native reader/writer then restored. Reader writes and both users endpoints returned 403. Full canonical WeChat SOURCE/title fidelity passed; known date/author transfer remains incomplete. Actual deployed 21-query benchmark remains 18/21, not full acceptance.
