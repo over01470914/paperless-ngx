@@ -1,0 +1,34 @@
+{
+  "task": "t_17e99466",
+  "revision": 1,
+  "baseline": "ec0397bb1d7534ac8348c7fea640a8fddec3101c",
+  "branch": "naya/article-intelligence",
+  "created_at": "2026-10-05T18:13:13+08:00",
+  "verified_at": "2026-10-05T18:59:17+08:00",
+  "head_at_verification": "49f6cef49196fb0c846fe1dc17617a505b88177b",
+  "timezone": "Asia/Shanghai",
+  "paths": [
+    "extensions/library/maintenance/__init__.py",
+    "extensions/library/maintenance/backup.py",
+    "extensions/library/maintenance/restore.py",
+    "extensions/library/maintenance/README.md",
+    "extensions/library/maintenance/contracts/backup-receipt.schema.json",
+    "extensions/library/tests/test_maintenance.py",
+    "extensions/library/changes/backup-revision1.json"
+  ],
+  "checks": {
+    "focused_unittest": "13 synthetic and mocked-Docker tests passed in the dedicated Paperless Library venv; exit 0",
+    "compileall": "maintenance modules and focused test syntax passed with private temporary pycache; exit 0",
+    "json_schema": "Draft 2020-12 check_schema and focused receipt validation (jsonschema 4.26.0) passed in the dedicated Paperless Library venv; exit 0",
+    "git_diff_check": "git diff --check exit 0; seven untracked deliverables passed no-index whitespace check"
+  },
+  "limits": [
+    "No live Docker, snapshot, restore, network, installation, commit, push, or deploy was run",
+    "Only synthetic and mocked local behavior verified",
+    "Cross-system native export and Library queue backup are sequential",
+    "Checkout HEAD advanced through two concurrent owner documentation commits after the pinned baseline; the maintenance deliverables remain new/untracked and disjoint",
+    "Same-host drill validates private queue reference rewrites but does not replay the queue or prove production restore",
+    "Owner recovery configuration must explicitly accept restored source roots before any actual queue recovery",
+    "No package installation; jsonschema verification used the pre-existing dedicated Paperless Library venv"
+  ]
+}

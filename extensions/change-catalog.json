@@ -1,4 +1,16 @@
 {
+  "maintenance_revision1_owner_source_release": {
+    "project": "over01470914/paperless-ngx",
+    "date": "2026-10-05",
+    "timezone": "Asia/Taipei",
+    "card": "paperless-radar/t_17e99466",
+    "owner_card": "paperless-radar/t_d7c39023",
+    "version": "maintenance absent -> revision 1; Library API0.3.0 unchanged",
+    "paths": ["extensions/library/maintenance/__init__.py", "extensions/library/maintenance/README.md", "extensions/library/maintenance/backup.py", "extensions/library/maintenance/restore.py", "extensions/library/maintenance/contracts/backup-receipt.schema.json", "extensions/library/tests/test_maintenance.py", "extensions/library/changes/backup-revision1.json", "extensions/CHANGELOG.md", "extensions/change-catalog.json"],
+    "contract": "extensions/library/maintenance/contracts/backup-receipt.schema.json Draft2020-12; owner-only fixed config; no public API change",
+    "verification": ["independent maintenance QA13/13 PASS", "compileall and JSON Schema validation PASS", "pending/blocked source/supplement/OCR copy/hash/path rewrite regressions PASS", "safe retained drill-resource failure output PASS", "git diff --check and exact staged-path catalog check"],
+    "limits": ["reviewed source only; no live full snapshot/restore acceptance", "no installed daily schedule", "source export and queue snapshot sequential not cross-system atomic", "same-host not offsite", "secrets/backups/config/receipts remain private"]
+  },
   "library_source_v03_owner_release": {
     "project": "over01470914/paperless-ngx",
     "date": "2026-10-05",

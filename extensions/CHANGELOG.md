@@ -1,5 +1,9 @@
 # Extensions changelog
 
+## Maintenance revision 1 — reviewed source release 2026-10-05
+
+- Added protected native export/online queue snapshots, pending file/OCR/supplement reference capture and an isolated same-version no-port restore drill with full document/original/metadata/permission comparison and owned-resource cleanup. Independent maintenance QA13/13 and schema/compile/scope checks passed. This commit installs no schedule, performs no live restore and proves no offsite backup; final owner operations follow full migration.
+
 ## Library 0.3.0 source release / owner acceptance revision 3 — 2026-10-05
 
 - Released independently reviewed source adapters, public stable identity/deduplication, local OCR indexing, metadata-only backfill, strict authenticated routes and text/envelope limits. Canonical prose contract revision 2 now agrees with the 0.3.0 OpenAPI and marks future stage4 interfaces separately.
